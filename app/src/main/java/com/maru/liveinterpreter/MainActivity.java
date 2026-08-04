@@ -40,6 +40,7 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         setContentView(buildScreen());
         IntentFilter filter = new IntentFilter(ACTION_LISTEN);
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(listenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        //noinspection UnspecifiedRegisterReceiverFlag -- required legacy overload on Android 8-12L.
         else registerReceiver(listenReceiver, filter);
         requestMicrophoneIfNeeded();
         listenWhenReady = ACTION_LISTEN.equals(getIntent().getAction());

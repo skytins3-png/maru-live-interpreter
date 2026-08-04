@@ -23,8 +23,17 @@ assert '"ko-KR"' in engine
 assert "setSpeechRate(0.92f)" in engine
 assert "setPitch(0.86f)" in engine
 
+activity = (root / required[4]).read_text(encoding="utf-8")
+assert "android.graphics.Typeface.BOLD" in activity
+assert "noinspection UnspecifiedRegisterReceiverFlag" in activity
+assert "setTypeface(null, 1)" not in activity
+
+workflow = (root / required[8]).read_text(encoding="utf-8")
+assert "V0.1.1" in workflow
+assert "lintDebug assembleDebug" in workflow
+
 languages = (root / "app/src/main/java/com/maru/liveinterpreter/LanguageOption.java").read_text(encoding="utf-8")
 for code in ('"en"', '"zh-CN"', '"ja"', '"ru"', '"bn"'):
     assert code in languages, f"missing language: {code}"
 
-print(f"PROJECT CHECK PASS: {len(required)} required files, 4 permissions, 5 target languages")
+print(f"PROJECT CHECK PASS: {len(required)} required files, 4 permissions, 5 target languages, 2 lint fixes")
