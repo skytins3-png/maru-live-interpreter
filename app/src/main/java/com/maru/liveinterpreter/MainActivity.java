@@ -65,12 +65,20 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         root.addView(language, new LinearLayout.LayoutParams(-1, dp(54)));
 
         Button talk = new Button(this);
-        talk.setText("🎤  한국어로 말하기");
+        talk.setText("🎤  내가 한국어로 말하기");
         talk.setTextSize(20);
         talk.setOnClickListener(v -> startListening());
         LinearLayout.LayoutParams talkParams = new LinearLayout.LayoutParams(-1, dp(72));
         talkParams.setMargins(0, dp(14), 0, dp(10));
         root.addView(talk, talkParams);
+
+        Button remote = new Button(this);
+        remote.setText("🌍  상대방 외국어 듣기 · 자동감지");
+        remote.setTextSize(18);
+        remote.setOnClickListener(v -> startRemoteListening());
+        LinearLayout.LayoutParams remoteParams = new LinearLayout.LayoutParams(-1, dp(64));
+        remoteParams.setMargins(0, 0, 0, dp(10));
+        root.addView(remote, remoteParams);
 
         Button floating = new Button(this);
         floating.setText("비고 위에 작은 통역 버튼 띄우기");
@@ -92,7 +100,14 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
             requestMicrophoneIfNeeded(); return;
         }
         engine.setTarget((LanguageOption) language.getSelectedItem());
-        engine.listen();
+        engine.listenKorean();
+    }
+
+    private void startRemoteListening() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestMicrophoneIfNeeded(); return;
+        }
+        engine.listenRemoteAuto();
     }
 
     private void requestMicrophoneIfNeeded() {
@@ -142,6 +157,13 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
     @Override public void onState(String value) { state.setText(value); }
     @Override public void onOriginal(String value) { original.setText("한국어\n" + value); }
     @Override public void onTranslated(String value) { translated.setText("번역\n" + value); }
+    @Override public void onDetectedLanguage(String label) {
+        LanguageOption[] values = LanguageOption.values();
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].label.equals(label)) { language.setSelection(i); break; }
+        }
+        state.setText("감지된 상대방 언어: " + label);
+    }
     @Override public void onError(String value) { state.setText(value); Toast.makeText(this, value, Toast.LENGTH_LONG).show(); }
     @Override protected void onDestroy() { unregisterReceiver(listenReceiver); engine.release(); super.onDestroy(); }
 }

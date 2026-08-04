@@ -29,11 +29,19 @@ assert "noinspection UnspecifiedRegisterReceiverFlag" in activity
 assert "setTypeface(null, 1)" not in activity
 
 workflow = (root / required[8]).read_text(encoding="utf-8")
-assert "V0.1.1" in workflow
+assert "V0.2.0" in workflow
 assert "lintDebug assembleDebug" in workflow
+
+assert "listenRemoteAuto" in engine
+assert "EXTRA_ENABLE_LANGUAGE_DETECTION" in engine
+assert "EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES" in engine
+assert "EXTRA_ENABLE_LANGUAGE_SWITCH" in engine
+assert "EXTRA_LANGUAGE_SWITCH_ALLOWED_LANGUAGES" in engine
+assert "onLanguageDetection" in engine
+assert "translateToKorean" in (root / "app/src/main/java/com/maru/liveinterpreter/TranslationClient.java").read_text(encoding="utf-8")
 
 languages = (root / "app/src/main/java/com/maru/liveinterpreter/LanguageOption.java").read_text(encoding="utf-8")
 for code in ('"en"', '"zh-CN"', '"ja"', '"ru"', '"bn"'):
     assert code in languages, f"missing language: {code}"
 
-print(f"PROJECT CHECK PASS: {len(required)} required files, 4 permissions, 5 target languages, 2 lint fixes")
+print(f"PROJECT CHECK PASS: {len(required)} required files, 4 permissions, 5 target languages, 2 lint fixes, bidirectional auto-detection")

@@ -19,5 +19,15 @@ public enum LanguageOption {
         this.voiceLocale = voiceLocale;
     }
 
+    public static LanguageOption fromTag(String tag) {
+        if (tag == null) return ENGLISH;
+        String lower = tag.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("zh")) return CHINESE;
+        if (lower.startsWith("ja")) return JAPANESE;
+        if (lower.startsWith("ru")) return RUSSIAN;
+        if (lower.startsWith("bn")) return BENGALI;
+        return ENGLISH;
+    }
+
     @Override public String toString() { return label; }
 }

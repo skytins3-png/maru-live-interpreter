@@ -18,11 +18,19 @@ public final class TranslationClient {
     private final Handler main = new Handler(Looper.getMainLooper());
 
     public void translateKorean(String text, LanguageOption target, Callback callback) {
+        translate(text, "ko", target.code, callback);
+    }
+
+    public void translateToKorean(String text, String sourceCode, Callback callback) {
+        translate(text, sourceCode, "ko", callback);
+    }
+
+    public void translate(String text, String sourceCode, String targetCode, Callback callback) {
         executor.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 String query = URLEncoder.encode(text, StandardCharsets.UTF_8.name());
-                String pair = URLEncoder.encode("ko|" + target.code, StandardCharsets.UTF_8.name());
+                String pair = URLEncoder.encode(sourceCode + "|" + targetCode, StandardCharsets.UTF_8.name());
                 URL url = new URL("https://api.mymemory.translated.net/get?q=" + query + "&langpair=" + pair);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setConnectTimeout(8000);
