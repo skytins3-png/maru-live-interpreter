@@ -53,7 +53,7 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         root.setBackgroundColor(Color.rgb(244, 250, 248));
 
         TextView title = text("MARU 실시간 음성 통역", 26, Color.rgb(16, 67, 60));
-        title.setTypeface(null, 1);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title, matchWrap());
         TextView guide = text("말하기 버튼을 누른 뒤 한국어로 말하면\n선택한 언어의 부드러운 음성으로 재생됩니다.", 16, Color.DKGRAY);
         guide.setPadding(0, dp(8), 0, dp(18));
