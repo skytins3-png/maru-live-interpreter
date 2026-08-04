@@ -33,8 +33,8 @@ public final class TranslationClient {
                 String pair = URLEncoder.encode(sourceCode + "|" + targetCode, StandardCharsets.UTF_8.name());
                 URL url = new URL("https://api.mymemory.translated.net/get?q=" + query + "&langpair=" + pair);
                 connection = (HttpURLConnection) url.openConnection();
-                connection.setConnectTimeout(8000);
-                connection.setReadTimeout(12000);
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(8000);
                 connection.setRequestProperty("Accept", "application/json");
                 int status = connection.getResponseCode();
                 if (status < 200 || status >= 300) throw new IllegalStateException("번역 서버 응답 " + status);

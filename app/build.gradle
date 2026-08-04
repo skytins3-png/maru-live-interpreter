@@ -7,8 +7,8 @@ android {
         applicationId 'com.maru.liveinterpreter'
         minSdk 26
         targetSdk 36
-        versionCode 30
-        versionName '0.3.0-auto-conversation-test'
+        versionCode 31
+        versionName '0.3.1-fast-conversation-test'
     }
     buildTypes {
         debug { applicationIdSuffix '' }

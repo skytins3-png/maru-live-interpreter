@@ -37,8 +37,15 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
     private boolean recognitionActive;
     private boolean autoConversation;
     private boolean nextRemote = true;
+    private boolean remoteLanguageLocked;
     private long lastStartMillis;
     private String detectedTag = "en-US";
+    private String lastPartial = "";
+    private final Runnable finishAfterShortSilence = () -> {
+        if (recognitionActive && !lastPartial.trim().isEmpty()) {
+            try { recognizer.stopListening(); } catch (RuntimeException ignored) { }
+        }
+    };
 
     public InterpreterEngine(Context context, Listener listener) {
         this.context = context.getApplicationContext();
@@ -48,8 +55,8 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
         tts = new TextToSpeech(context, this);
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override public void onStart(String utteranceId) { }
-            @Override public void onError(String utteranceId) { main.post(() -> scheduleNext(900)); }
-            @Override public void onDone(String utteranceId) { main.post(() -> scheduleNext(650)); }
+            @Override public void onError(String utteranceId) { main.post(() -> scheduleNext(450)); }
+            @Override public void onDone(String utteranceId) { main.post(() -> scheduleNext(280)); }
         });
     }
 
@@ -62,23 +69,26 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
 
     public void listenRemoteAuto() {
         remoteMode = true;
-        detectedTag = "en-US";
-        Intent intent = buildIntent("en-US", true);
-        if (Build.VERSION.SDK_INT >= 34) {
+        Intent intent = buildIntent(remoteLanguageLocked ? detectedTag : "en-US", true);
+        if (!remoteLanguageLocked && Build.VERSION.SDK_INT >= 34) {
             ArrayList<String> allowed = new ArrayList<>(Arrays.asList("en-US", "zh-CN", "ja-JP", "ru-RU", "bn-BD"));
             intent.putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_DETECTION, true);
             intent.putStringArrayListExtra(RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES, allowed);
             intent.putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_SWITCH, RecognizerIntent.LANGUAGE_SWITCH_BALANCED);
             intent.putStringArrayListExtra(RecognizerIntent.EXTRA_LANGUAGE_SWITCH_ALLOWED_LANGUAGES, allowed);
         }
-        start(intent, "상대방 말을 듣는 중… 언어 자동감지");
+        start(intent, remoteLanguageLocked
+                ? "상대방 말을 듣는 중… " + target.label + " 고정"
+                : "상대방 말을 듣는 중… 언어 자동감지");
     }
 
     public void startAutoConversation() {
         autoConversation = true;
         nextRemote = true;
+        remoteLanguageLocked = false;
+        detectedTag = "en-US";
         listener.onState("자동 일상대화 시작");
-        main.postDelayed(this::listenRemoteAuto, 500);
+        main.postDelayed(this::listenRemoteAuto, 250);
     }
 
     public void stopAutoConversation() {
@@ -98,6 +108,9 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, language);
         intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, remote ? 3 : 1);
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 650L);
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 400L);
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 250L);
         return intent;
     }
 
@@ -106,9 +119,11 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
             listener.onError("휴대폰 음성인식 서비스를 사용할 수 없습니다"); return;
         }
         tts.stop();
-        long wait = Math.max(0, 450 - (System.currentTimeMillis() - lastStartMillis));
+        long wait = Math.max(0, 250 - (System.currentTimeMillis() - lastStartMillis));
         Runnable begin = () -> {
             try {
+                lastPartial = "";
+                main.removeCallbacks(finishAfterShortSilence);
                 recognitionActive = true;
                 lastStartMillis = System.currentTimeMillis();
                 recognizer.startListening(intent);
@@ -116,13 +131,13 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
             } catch (RuntimeException e) {
                 recognitionActive = false;
                 listener.onError("음성인식을 다시 준비합니다");
-                if (autoConversation) main.postDelayed(this::retryCurrentMode, 1200);
+                if (autoConversation) main.postDelayed(this::retryCurrentMode, 650);
             }
         };
         if (recognitionActive) {
             recognitionActive = false;
             recognizer.cancel();
-            main.postDelayed(begin, Math.max(500, wait));
+            main.postDelayed(begin, Math.max(300, wait));
         } else main.postDelayed(begin, wait);
     }
 
@@ -144,6 +159,7 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
         LanguageOption detected = LanguageOption.fromTag(resolveDetectedTag(foreignText));
         detectedTag = detected.code;
         target = detected;
+        remoteLanguageLocked = true;
         listener.onDetectedLanguage(detected.label);
         listener.onOriginal(detected.label + " 원문\n" + foreignText);
         listener.onState("한국어로 번역 중…");
@@ -158,7 +174,7 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
 
     private void translationError(String message) {
         listener.onError(message);
-        if (autoConversation) main.postDelayed(this::retryCurrentMode, 1200);
+        if (autoConversation) main.postDelayed(this::retryCurrentMode, 650);
     }
 
     private String resolveDetectedTag(String text) {
@@ -232,21 +248,32 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
     @Override public void onEndOfSpeech() { listener.onState("말이 끝났어요 · 변환 중…"); }
     @Override public void onError(int error) {
         recognitionActive = false;
+        main.removeCallbacks(finishAfterShortSilence);
         String message = error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
                 ? "말을 기다리는 중…" : "마이크 또는 음성인식 오류: " + error;
         listener.onError(message);
-        if (autoConversation) main.postDelayed(this::retryCurrentMode, error == SpeechRecognizer.ERROR_CLIENT ? 1400 : 900);
+        if (autoConversation) main.postDelayed(this::retryCurrentMode,
+                error == SpeechRecognizer.ERROR_CLIENT ? 800 : 450);
     }
     @Override public void onResults(Bundle results) {
         recognitionActive = false;
+        main.removeCallbacks(finishAfterShortSilence);
         ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         if (list == null || list.isEmpty() || list.get(0).trim().isEmpty()) {
             listener.onError("인식된 말이 없습니다");
-            if (autoConversation) main.postDelayed(this::retryCurrentMode, 900);
+            if (autoConversation) main.postDelayed(this::retryCurrentMode, 450);
         } else if (remoteMode) translateRemote(list.get(0).trim());
         else translateKorean(list.get(0).trim());
     }
-    @Override public void onPartialResults(Bundle partialResults) { }
+    @Override public void onPartialResults(Bundle partialResults) {
+        ArrayList<String> list = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        if (list == null || list.isEmpty()) return;
+        String partial = list.get(0).trim();
+        if (partial.isEmpty()) return;
+        lastPartial = partial;
+        main.removeCallbacks(finishAfterShortSilence);
+        main.postDelayed(finishAfterShortSilence, 650);
+    }
     @Override public void onEvent(int eventType, Bundle params) { }
 
     @Override public void onLanguageDetection(Bundle results) {
@@ -256,6 +283,7 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
         if (tag != null && confidence >= SpeechRecognizer.LANGUAGE_DETECTION_CONFIDENCE_LEVEL_CONFIDENT) {
             detectedTag = tag;
             target = LanguageOption.fromTag(tag);
+            remoteLanguageLocked = true;
             listener.onDetectedLanguage(target.label);
         }
     }
