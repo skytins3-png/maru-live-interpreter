@@ -1,48 +1,31 @@
-name: Build MARU LIVE INTERPRETER V0.1.0 TEST APK
-
+name: Build MARU LIVE INTERPRETER V0.2.0 BIDIRECTIONAL TEST APK
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK 36
-        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Set up Gradle 8.13
-        uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
       - name: Compile and test APK
         run: gradle --no-daemon clean lintDebug assembleDebug
-
       - name: Name APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.1.0-TEST.apk
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST.apk
+      - uses: actions/upload-artifact@v4
         with:
-          name: MARU-LIVE-INTERPRETER-V0.1.0-TEST
-          path: MARU-LIVE-INTERPRETER-V0.1.0-TEST.apk
+          name: MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST
+          path: MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST.apk
           if-no-files-found: error
