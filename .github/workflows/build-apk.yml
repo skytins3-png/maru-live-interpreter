@@ -1,4 +1,4 @@
-name: Build MARU LIVE INTERPRETER V0.2.0 BIDIRECTIONAL TEST APK
+name: Build MARU LIVE INTERPRETER V0.3.0 AUTO CONVERSATION TEST APK
 on:
   workflow_dispatch:
   push:
@@ -23,9 +23,9 @@ jobs:
       - name: Compile and test APK
         run: gradle --no-daemon clean lintDebug assembleDebug
       - name: Name APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.3.0-AUTO-CONVERSATION-TEST.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST
-          path: MARU-LIVE-INTERPRETER-V0.2.0-BIDIRECTIONAL-TEST.apk
+          name: MARU-LIVE-INTERPRETER-V0.3.0-AUTO-CONVERSATION-TEST
+          path: MARU-LIVE-INTERPRETER-V0.3.0-AUTO-CONVERSATION-TEST.apk
           if-no-files-found: error
