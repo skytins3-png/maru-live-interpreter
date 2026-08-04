@@ -56,7 +56,7 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         TextView title = text("MARU 실시간 음성 통역", 26, Color.rgb(16, 67, 60));
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(title, matchWrap());
-        TextView guide = text("말하기 버튼을 누른 뒤 한국어로 말하면\n선택한 언어의 부드러운 음성으로 재생됩니다.", 16, Color.DKGRAY);
+        TextView guide = text("자동 일상대화를 한 번 시작하면\n상대방과 형의 말을 번갈아 듣고 통역합니다.", 16, Color.DKGRAY);
         guide.setPadding(0, dp(8), 0, dp(18));
         root.addView(guide, matchWrap());
 
@@ -81,7 +81,7 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         root.addView(remote, remoteParams);
 
         Button floating = new Button(this);
-        floating.setText("비고 위에 작은 통역 버튼 띄우기");
+        floating.setText("자동 일상대화 시작 · 비고 화면 유지");
         floating.setOnClickListener(v -> enableFloatingButton());
         root.addView(floating, new LinearLayout.LayoutParams(-1, dp(54)));
 
@@ -140,7 +140,7 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         }
         Intent service = new Intent(this, FloatingInterpreterService.class);
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
-        Toast.makeText(this, "작은 통역 버튼을 띄웠어요", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "자동 일상대화를 시작했어요. 비고로 돌아가세요", Toast.LENGTH_LONG).show();
     }
 
     private TextView text(String value, int sp, int color) {
