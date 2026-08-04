@@ -41,17 +41,18 @@ public final class InterpreterEngine implements RecognitionListener, TextToSpeec
     private long lastStartMillis;
     private String detectedTag = "en-US";
     private String lastPartial = "";
-    private final Runnable finishAfterShortSilence = () -> {
-        if (recognitionActive && !lastPartial.trim().isEmpty()) {
-            try { recognizer.stopListening(); } catch (RuntimeException ignored) { }
-        }
-    };
+    private final Runnable finishAfterShortSilence;
 
     public InterpreterEngine(Context context, Listener listener) {
         this.context = context.getApplicationContext();
         this.listener = listener;
         recognizer = SpeechRecognizer.createSpeechRecognizer(context);
         recognizer.setRecognitionListener(this);
+        finishAfterShortSilence = () -> {
+            if (recognitionActive && !lastPartial.trim().isEmpty()) {
+                try { recognizer.stopListening(); } catch (RuntimeException ignored) { }
+            }
+        };
         tts = new TextToSpeech(context, this);
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override public void onStart(String utteranceId) { }

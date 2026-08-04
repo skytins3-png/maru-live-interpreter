@@ -25,6 +25,8 @@ assert "setPitch(0.78f)" in engine
 assert "EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 650L" in engine
 assert "remoteLanguageLocked" in engine
 assert "finishAfterShortSilence" in engine
+assert "private final Runnable finishAfterShortSilence;" in engine
+assert engine.index("finishAfterShortSilence = () ->") > engine.index("recognizer = SpeechRecognizer.createSpeechRecognizer(context);")
 
 activity = (root / required[4]).read_text(encoding="utf-8")
 assert "android.graphics.Typeface.BOLD" in activity
