@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -100,7 +101,9 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         translated = card("번역된 문장이 여기에 표시됩니다");
         root.addView(original, cardParams());
         root.addView(translated, cardParams());
-        return root;
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        return scroll;
     }
 
     private void startListening() {
