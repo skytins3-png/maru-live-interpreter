@@ -25,6 +25,9 @@ public final class TranslationClient {
         translate(text, sourceCode, "ko", callback);
     }
 
+    /** Stop pending requests when the Activity closes. */
+    public void close() { executor.shutdownNow(); }
+
     public void translate(String text, String sourceCode, String targetCode, Callback callback) {
         executor.execute(() -> {
             HttpURLConnection connection = null;
@@ -43,6 +46,10 @@ public final class TranslationClient {
                     String line; while ((line = reader.readLine()) != null) body.append(line);
                 }
                 JSONObject root = new JSONObject(body.toString());
+                int responseStatus = root.optInt("responseStatus", 200);
+                if (responseStatus != 200) {
+                    throw new IllegalStateException(root.optString("responseDetails", "번역 API 사용량 또는 언어 오류"));
+                }
                 String translated = root.getJSONObject("responseData").optString("translatedText", "").trim();
                 if (translated.isEmpty()) throw new IllegalStateException("번역 결과가 비어 있습니다");
                 main.post(() -> callback.onResult(translated));
