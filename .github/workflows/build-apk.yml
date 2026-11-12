@@ -1,4 +1,4 @@
-name: Build MARU LIVE INTERPRETER V0.4.0 WECHAT RELAY TEST APK
+name: Build MARU LIVE INTERPRETER V0.4.1 WECHAT CLARITY TEST APK
 on:
   workflow_dispatch:
   push:
@@ -32,9 +32,9 @@ jobs:
           python3 scripts/check_wechat_relay.py
           gradle --no-daemon clean lintDebug assembleDebug
       - name: Name APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.4.0-WECHAT-RELAY-TEST.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: MARU-LIVE-INTERPRETER-V0.4.0-WECHAT-RELAY-TEST
-          path: MARU-LIVE-INTERPRETER-V0.4.0-WECHAT-RELAY-TEST.apk
+          name: MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST
+          path: MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST.apk
           if-no-files-found: error
