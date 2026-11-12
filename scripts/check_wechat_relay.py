@@ -26,7 +26,13 @@ checks = {
     "activity registration": 'android:name=".WeChatRelayTestActivity"' in manifest,
     "explicit response validation": 'responseStatus != 200' in client,
     "client shutdown": "public void close()" in client,
-    "version updated": "0.4.0-wechat-relay-test" in gradle,
+    "version updated": "0.4.1-wechat-clarity-test" in gradle,
+    "direct translation comparison": 'translator.translate(phrase, from, to' in src,
+    "dual outputs": "directResult.setText" in src and "comparison.setText" in src,
+    "editable final text": 'approvedOutput = new EditText(this);' in src,
+    "manual speech approval": 'speak(checked, lastVoiceLocale)' in src,
+    "no automatic post-translation speech": 'speak(finalText, lastVoiceLocale)' not in src,
+    "spell-based similarity disclaimer": "DOES NOT prove semantic equivalence" in src,
     "CI invokes tests": "python3 scripts/check_wechat_relay.py" in workflow,
 }
 for name, passed in checks.items():
