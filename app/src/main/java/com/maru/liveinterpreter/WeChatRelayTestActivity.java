@@ -35,6 +35,7 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
     private boolean busy;
     private boolean destroyed;
     private String lastTranslation = "";
+    private String lastDirectTranslation = "";
     private Locale lastVoiceLocale = Locale.SIMPLIFIED_CHINESE;
     private String source = "ko";
     private String target = "zh-CN";
@@ -45,6 +46,9 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
     private TextView result;
     private TextView reverseEnglish;
     private TextView reverseSource;
+    private TextView directResult;
+    private TextView comparison;
+    private EditText approvedOutput;
     private EditText typed;
     private Button koreanMic;
     private Button chineseMic;
@@ -68,7 +72,7 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
         TextView heading = label("위챗 한·중 음성 번역 테스트", 24, Color.rgb(17, 78, 66));
         heading.setTypeface(null, android.graphics.Typeface.BOLD);
         root.addView(heading);
-        root.addView(label("음성 인식 → 영어 → 최종 언어 → 영어 → 원래 언어로 역번역 검사", 15, Color.DKGRAY));
+        root.addView(label("영어 경유 번역과 직접 번역을 나란히 확인하고, 역번역까지 비교합니다. 확인 전에는 음성을 자동으로 재생하지 않습니다.", 15, Color.DKGRAY));
         root.addView(spacer(14));
 
         koreanMic = button("🎤 한국어 말하기 → 영어 → 중국어", root, () -> recognize("ko-KR", REQUEST_KOREAN));
@@ -95,6 +99,11 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
             source = toChinese ? "zh-CN" : "ko";
             target = toChinese ? "ko" : "zh-CN";
             status.setText(toChinese ? "중국어 → 영어 → 한국어 선택" : "한국어 → 영어 → 중국어 선택");
+            lastTranslation = "";
+            lastDirectTranslation = "";
+            approvedOutput.setText("");
+            replay.setEnabled(false);
+            comparison.setText("비교 결과 초기화 · 새 문장을 번역해 주세요");
         });
         root.addView(spacer(12));
 
@@ -105,11 +114,34 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
         result = box(root, "③ 최종 번역");
         reverseEnglish = box(root, "④ 역번역 영어");
         reverseSource = box(root, "⑤ 원래 언어로 역번역 · 의미 확인");
-        replay = button("🔊 최종 번역 다시 듣기", root, () -> speak(lastTranslation, lastVoiceLocale));
+        directResult = box(root, "⑥ 직접 번역 (비교용)");
+        comparison = box(root, "⚠ 문장 뜻을 확인한 다음 음성 읽기");
+        button("영어 경유 결과 선택", root, () -> {
+            if (busy || lastTranslation.isEmpty()) return;
+            approvedOutput.setText(lastTranslation);
+        });
+        button("직접 번역 결과 선택", root, () -> {
+            if (busy || lastDirectTranslation.isEmpty()) return;
+            approvedOutput.setText(lastDirectTranslation);
+        });
+        approvedOutput = new EditText(this);
+        approvedOutput.setTextSize(18);
+        approvedOutput.setMinLines(2);
+        approvedOutput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        approvedOutput.setHint("최종 문장을 직접 검토하거나 수정하세요");
+        approvedOutput.setPadding(dp(12), dp(12), dp(12), dp(12));
+        approvedOutput.setBackgroundColor(Color.WHITE);
+        root.addView(approvedOutput, new LinearLayout.LayoutParams(-1, -2));
+        replay = button("🔊 검토한 문장만 읽기 (직접 누를 때 재생)", root, () -> {
+            if (busy) return;
+            String checked = approvedOutput.getText().toString().trim();
+            if (checked.isEmpty()) { toast("검토한 문장이 없습니다"); return; }
+            speak(checked, lastVoiceLocale);
+        });
         replay.setEnabled(false);
         root.addView(spacer(8));
 
-        TextView notice = label("주의: 이 화면은 마이크/문장 번역을 따로 시험하는 기능입니다. 위챗 통화 상대방의 소리를 직접 가져오거나 통화에 번역 음성을 주입하지 않습니다. 통화에서는 갤럭시 AI 실시간 통역을 사용하세요. 음성 인식 서비스와 번역 서버에 음성 또는 텍스트가 전송될 수 있습니다. 무료 번역 서버에는 사용량 제한이 있으며, 연쇄 번역이 100% 정확한 것은 아닙니다.", 13, Color.DKGRAY);
+        TextView notice = label("중요: 두 번역이 같고 역번역이 비슷하더라도 뜻의 정확성이 보장되지는 않습니다. 특히 사랑·서운함·화남·거절처럼 감정이 담긴 말은 상대방에게 문장의 의도를 다시 확인하세요. 이 화면은 따로 마이크/문장을 시험합니다. 위챗 통화 소리를 직접 가져오거나 상대방 통화에 음성을 주입하지 않습니다. 실제 통화는 Galaxy AI 실시간 통역을 사용하세요. 음성이나 텍스트가 외부 음성 인식/번역 서비스에 전송될 수 있고 무료 번역 서버 사용량 제한이 있습니다.", 13, Color.DKGRAY);
         notice.setPadding(0, dp(12), 0, dp(8));
         root.addView(notice);
         button("⚙ 휴대폰 설정 열기 · Galaxy AI → 통화 어시스트", root, () ->
@@ -157,19 +189,23 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
         busy = true;
         setControlsEnabled(false);
         lastTranslation = "";
+        lastDirectTranslation = "";
+        approvedOutput.setText("");
         replay.setEnabled(false);
         original.setText("① 원문 (" + from + ")\n" + phrase);
         intermediate.setText("② 영어 중간 번역\n진행 중…");
         result.setText("③ 최종 번역\n대기");
         reverseEnglish.setText("④ 역번역 영어\n대기");
         reverseSource.setText("⑤ 역번역 검증\n대기");
-        status.setText("1/4 원문을 영어로 번역 중…");
+        directResult.setText("⑥ 직접 번역\n대기");
+        comparison.setText("⚠ 결과 비교와 뜻 확인이 끝나기 전에는 음성을 재생하지 않습니다");
+        status.setText("1/5 원문을 영어로 번역 중…");
         translator.translate(phrase, from, "en", new TranslationClient.Callback() {
             @Override public void onError(String message) { fail("영어 번역 실패: " + message); }
             @Override public void onResult(String english) {
                 if (destroyed) return;
                 intermediate.setText("② 영어 중간 번역\n" + english);
-                status.setText("2/4 영어를 최종 언어로 번역 중…");
+                status.setText("2/5 영어를 최종 언어로 번역 중…");
                 translator.translate(english, "en", to, new TranslationClient.Callback() {
                     @Override public void onError(String message) { fail("최종 번역 실패: " + message); }
                     @Override public void onResult(String finalText) {
@@ -177,22 +213,47 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
                         result.setText("③ 최종 번역 (" + to + ")\n" + finalText);
                         lastTranslation = finalText;
                         lastVoiceLocale = "ko".equals(to) ? Locale.KOREA : Locale.SIMPLIFIED_CHINESE;
-                        speak(finalText, lastVoiceLocale);
-                        status.setText("3/4 최종 문장을 영어로 역번역 중…");
+                        approvedOutput.setText(finalText);
+                        status.setText("3/5 최종 문장을 영어로 역번역 중…");
                         translator.translate(finalText, to, "en", new TranslationClient.Callback() {
                             @Override public void onError(String message) { fail("영어 역번역 실패: " + message); }
                             @Override public void onResult(String backEnglish) {
                                 if (destroyed) return;
                                 reverseEnglish.setText("④ 역번역 영어\n" + backEnglish);
-                                status.setText("4/4 영어를 원래 언어로 역번역 중…");
+                                status.setText("4/5 영어를 원래 언어로 역번역 중…");
                                 translator.translate(backEnglish, "en", from, new TranslationClient.Callback() {
                                     @Override public void onError(String message) { fail("검증 번역 실패: " + message); }
                                     @Override public void onResult(String backOriginal) {
                                         if (destroyed) return;
                                         reverseSource.setText("⑤ 역번역 검증 (" + from + ")\n" + backOriginal
                                             + "\n원문과 의미가 같은지 직접 확인해 주세요.");
-                                        status.setText("4단계 번역 완료 · 원문과 역번역을 비교해 주세요");
-                                        completeRelay();
+                                        status.setText("5/5 원문을 직접 번역해 영어 경유 결과와 비교 중…");
+                                        translator.translate(phrase, from, to, new TranslationClient.Callback() {
+                                            @Override public void onError(String message) {
+                                                if (destroyed) return;
+                                                directResult.setText("⑥ 직접 번역 실패: " + message);
+                                                comparison.setText("⚠ 비교하지 못했습니다. 자동 음성 재생 안 함. 원문과 역번역을 직접 확인하세요.");
+                                                status.setText("영어 경유 번역 완료 · 직접 비교 실패");
+                                                completeRelay();
+                                            }
+                                            @Override public void onResult(String directText) {
+                                                if (destroyed) return;
+                                                lastDirectTranslation = directText;
+                                                directResult.setText("⑥ 직접 번역 (" + to + ")\n" + directText);
+                                                boolean samePath = normalizedEqual(finalText, directText);
+                                                boolean sameReturn = normalizedEqual(phrase, backOriginal);
+                                                String warning = samePath
+                                                    ? "영어 경유 번역과 직접 번역의 글자가 비슷합니다."
+                                                    : "⚠ 두 번역이 다릅니다. 오해를 막으려면 뜻을 다시 확인해 주세요.";
+                                                warning += sameReturn
+                                                    ? "\n역번역은 원문과 비슷하지만 정확성 보장은 아닙니다."
+                                                    : "\n⚠ 역번역이 원문과 다릅니다. 주의해서 검토하세요.";
+                                                warning += "\n감정 표현은 상대방에게 뜻을 확인하세요. 자동 음성 재생은 꺼져 있습니다.";
+                                                comparison.setText(warning);
+                                                status.setText("5단계 비교 완료 · 결과를 읽고 원하는 문장만 재생하세요");
+                                                completeRelay();
+                                            }
+                                        });
                                     }
                                 });
                             }
@@ -214,6 +275,23 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
         busy = false;
         setControlsEnabled(true);
         replay.setEnabled(!lastTranslation.isEmpty());
+    }
+
+    // A text-only warning: similar spelling DOES NOT prove semantic equivalence.
+    private static boolean normalizedEqual(String left, String right) {
+        return normalizeForDisplayComparison(left).equals(normalizeForDisplayComparison(right));
+    }
+
+    private static String normalizeForDisplayComparison(String value) {
+        if (value == null) return "";
+        StringBuilder out = new StringBuilder();
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            if (Character.isLetterOrDigit(codePoint))
+                out.appendCodePoint(Character.toLowerCase(codePoint));
+            offset += Character.charCount(codePoint);
+        }
+        return out.toString();
     }
 
     private void setControlsEnabled(boolean value) {
