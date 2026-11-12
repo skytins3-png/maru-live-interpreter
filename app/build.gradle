@@ -11,7 +11,7 @@ android {
         versionName '0.4.0-wechat-relay-test'
     }
     buildTypes {
-        debug { applicationIdSuffix '' }
+        debug { applicationIdSuffix '.wechattest' }
         release {
             signingConfig signingConfigs.debug
             minifyEnabled false
