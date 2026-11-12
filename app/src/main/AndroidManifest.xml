@@ -27,6 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".WeChatRelayTestActivity" android:exported="false" />
         <service
             android:name=".FloatingInterpreterService"
             android:exported="false"
