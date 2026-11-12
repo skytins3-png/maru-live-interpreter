@@ -7,8 +7,8 @@ android {
         applicationId 'com.maru.liveinterpreter'
         minSdk 26
         targetSdk 36
-        versionCode 40
-        versionName '0.4.0-wechat-relay-test'
+        versionCode 41
+        versionName '0.4.1-wechat-clarity-test'
     }
     buildTypes {
         debug { applicationIdSuffix '.wechattest' }
