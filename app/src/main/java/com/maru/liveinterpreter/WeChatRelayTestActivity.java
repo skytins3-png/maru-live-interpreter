@@ -192,7 +192,7 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
                                         reverseSource.setText("⑤ 역번역 검증 (" + from + ")\n" + backOriginal
                                             + "\n원문과 의미가 같은지 직접 확인해 주세요.");
                                         status.setText("4단계 번역 완료 · 원문과 역번역을 비교해 주세요");
-                                        finish();
+                                        completeRelay();
                                     }
                                 });
                             }
@@ -207,10 +207,10 @@ public final class WeChatRelayTestActivity extends Activity implements TextToSpe
         if (destroyed) return;
         status.setText(reason);
         toast(reason);
-        finish();
+        completeRelay();
     }
 
-    private void finish() {
+    private void completeRelay() {
         busy = false;
         setControlsEnabled(true);
         replay.setEnabled(!lastTranslation.isEmpty());
