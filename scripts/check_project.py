@@ -34,7 +34,7 @@ assert "noinspection UnspecifiedRegisterReceiverFlag" in activity
 assert "setTypeface(null, 1)" not in activity
 
 workflow = (root / required[8]).read_text(encoding="utf-8")
-assert "V0.3.1" in workflow
+assert "V0.4.1" in workflow
 assert "lintDebug assembleDebug" in workflow
 
 assert "listenRemoteAuto" in engine

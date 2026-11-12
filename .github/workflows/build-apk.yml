@@ -1,8 +1,8 @@
-name: Build MARU LIVE INTERPRETER V0.3.1 FAST CONVERSATION TEST APK
+name: Build MARU LIVE INTERPRETER V0.4.1 WECHAT CLARITY TEST APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, wechat-relay-test-20261112 ]
 permissions:
   contents: read
 jobs:
@@ -15,17 +15,26 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Configure Android SDK (runner preinstalled tools)
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -n "$SDKMANAGER"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
       - name: Compile and test APK
-        run: gradle --no-daemon clean lintDebug assembleDebug
+        run: |
+          python3 scripts/check_project.py
+          python3 scripts/check_wechat_relay.py
+          gradle --no-daemon clean lintDebug assembleDebug
       - name: Name APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.3.1-FAST-CONVERSATION-TEST.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: MARU-LIVE-INTERPRETER-V0.3.1-FAST-CONVERSATION-TEST
-          path: MARU-LIVE-INTERPRETER-V0.3.1-FAST-CONVERSATION-TEST.apk
+          name: MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST
+          path: MARU-LIVE-INTERPRETER-V0.4.1-WECHAT-CLARITY-TEST.apk
           if-no-files-found: error

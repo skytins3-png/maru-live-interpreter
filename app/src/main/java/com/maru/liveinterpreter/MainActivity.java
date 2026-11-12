@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -80,6 +81,14 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         remoteParams.setMargins(0, 0, 0, dp(10));
         root.addView(remote, remoteParams);
 
+        Button wechat = new Button(this);
+        wechat.setText("위챗 한국어 ↔ 중국어 음성 번역 테스트");
+        wechat.setTextSize(18);
+        wechat.setOnClickListener(v -> startActivity(new Intent(this, WeChatRelayTestActivity.class)));
+        LinearLayout.LayoutParams wechatParams = new LinearLayout.LayoutParams(-1, dp(64));
+        wechatParams.setMargins(0, 0, 0, dp(10));
+        root.addView(wechat, wechatParams);
+
         Button floating = new Button(this);
         floating.setText("자동 일상대화 시작 · 비고 화면 유지");
         floating.setOnClickListener(v -> enableFloatingButton());
@@ -92,7 +101,9 @@ public final class MainActivity extends Activity implements InterpreterEngine.Li
         translated = card("번역된 문장이 여기에 표시됩니다");
         root.addView(original, cardParams());
         root.addView(translated, cardParams());
-        return root;
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(root);
+        return scroll;
     }
 
     private void startListening() {

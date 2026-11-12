@@ -15,7 +15,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="MARU 실시간 통역"
+        android:label="MARU 위챗 음성 테스트"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
         <activity
@@ -27,6 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".WeChatRelayTestActivity" android:exported="false" />
         <service
             android:name=".FloatingInterpreterService"
             android:exported="false"
